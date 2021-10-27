@@ -1,3 +1,5 @@
+; Created by Wilenty: https://wilenty.wixsite.com/links
+
 [Files]
 Source: "TSMBIOS.dll"; DestDir: "{tmp}"; Flags: DontCopy IgnoreVersion
 

@@ -1,3 +1,5 @@
+; Created by Wilenty: https://wilenty.wixsite.com/links
+
 [Setup]
 AppId=TSMBIOS Example
 AppName=TSMBIOS Example
@@ -53,8 +55,6 @@ Name: "a"; Description: "a";
 [code]
 Var
   SMBios: TSMBios;
-
-// ---
 
 Function SMBiosNotNil(): Boolean;
   begin
@@ -221,8 +221,6 @@ Function HasGroupAssociationsInformation(): Boolean;
     If Result then
       Result := HasGroupAssociationsInfo(SMBios);
 end;
-
-// ---
 
 Procedure SmbiosVersionInfo(ClearItems: Boolean);
   begin
