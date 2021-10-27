@@ -1,0 +1,784 @@
+[Files]
+Source: "TSMBIOS.dll"; DestDir: "{tmp}"; Flags: DontCopy IgnoreVersion
+
+[code]
+// ---
+Type
+  TSMBios = TObject;
+
+// ---
+
+Function SMBiosCreate(LoadComputerBiosData: Boolean): TSMBios;
+  External 'Create@files:TSMBIOS.dll stdcall';
+
+Function SMBiosCreateFromFile(const FileName: PAnsiChar): TSMBios;
+  External 'CreateFromFile@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function SMBiosSaveToFile(const SMBios: TSMBios; const FileName: PAnsiChar): Boolean;
+  External 'SaveToFile@files:TSMBIOS.dll stdcall';
+
+Function SMBiosLoadFromFile(const SMBios: TSMBios; const FileName: PAnsiChar): Boolean;
+  External 'LoadFromFile@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function SmbiosVersion(const SMBios: TSMBios): PAnsiChar;
+  External 'SmbiosVersion@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Type
+  TSmBiosTableHeader = record
+    TableType: Byte;
+    Length: Byte;
+    Handle: Word;
+  end;
+
+  TBiosInfo = record
+    Header: TSmBiosTableHeader;
+    Vendor: Byte;
+    Version: Byte;
+    StartingSegment: Word;
+    ReleaseDate: Byte;
+    BiosRomSize: Byte;
+    Characteristics: Int64;
+    ExtensionBytes: array [0..1] of Byte;
+    SystemBIOSMajorRelease: Byte;
+    SystemBIOSMinorRelease: Byte;
+    EmbeddedControllerFirmwareMajorRelease: Byte;
+    EmbeddedControllerFirmwareMinorRelease: Byte;
+  end;
+
+  TBiosInformation = record
+    RAWBiosInformation: TBiosInfo;
+    VendorStr: PAnsiChar;
+    VersionStr: PAnsiChar;
+    ReleaseDateStr: PAnsiChar;
+  end;
+
+Function BiosInfo(const SMBios: TSMBios; out BiosInformation: TBiosInformation): Boolean;
+  External 'BiosInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Type
+  TSysInfo = record
+    Header: TSmBiosTableHeader;
+    Manufacturer: Byte;
+    ProductName: Byte;
+    Version: Byte;
+    SerialNumber: Byte;
+    UUID: array [0 .. 15] of Byte;
+    WakeUpType: Byte;
+    SKUNumber: Byte;
+    Family: Byte;
+  end;
+
+  TSystemInformation = record
+    RAWSystemInformation: TSysInfo;
+    ManufacturerStr: PAnsiChar;
+    ProductNameStr: PAnsiChar;
+    VersionStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    SKUNumberStr: PAnsiChar;
+    FamilyStr: PAnsiChar;
+  end;
+
+Function SysInfo(const SMBios: TSMBios; out SystemInformation: TSystemInformation): Boolean;
+  External 'SysInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasBaseBoardInfo(const SMBios: TSMBios): Boolean;
+  External 'HasBaseBoardInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TBaseBoardInfo = record
+    Header: TSmBiosTableHeader;
+    Manufacturer: Byte;
+    Product: Byte;
+    Version: Byte;
+    SerialNumber: Byte;
+    AssetTag: Byte;
+    FeatureFlags: Byte;
+    LocationinChassis: Byte;
+    ChassisHandle: Word;
+    BoardType: Byte;
+    NumberofContainedObjectHandles: Byte;
+  end;
+
+  TBaseBoardInformation = record
+    RAWBaseBoardInformation: TBaseBoardInfo;
+    BoardTypeStr: PAnsiChar;
+    ManufacturerStr: PAnsiChar;
+    ProductStr: PAnsiChar;
+    VersionStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    AssetTagStr: PAnsiChar;
+    LocationinChassisStr: PAnsiChar;
+  end;
+
+Function BaseBoardInfo(const SMBios: TSMBios; var Index: Integer; out BaseBoardInformation: TBaseBoardInformation): Boolean;
+  External 'BaseBoardInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasEnclosureInfo(const SMBios: TSMBios): Boolean;
+  External 'HasEnclosureInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TEnclosureInfo = record
+    Header: TSmBiosTableHeader;
+    Manufacturer: Byte;
+    _Type: Byte;
+    Version: Byte;
+    SerialNumber: Byte;
+    AssetTagNumber: Byte;
+    BootUpState: Byte;
+    PowerSupplyState: Byte;
+    ThermalState: Byte;
+    SecurityStatus: Byte;
+    OEM_Defined: DWORD;
+    Height: Byte;
+    NumberofPowerCords: Byte;
+    ContainedElementCount: Byte;
+    ContainedElementRecordLength: Byte;
+  end;
+
+  TEnclosureInformation = record
+    RAWEnclosureInformation: TEnclosureInfo;
+    ManufacturerStr: PAnsiChar;
+    VersionStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    AssetTagNumberStr: PAnsiChar;
+    TypeStr: PAnsiChar;
+    BootUpStateStr: PAnsiChar;
+    PowerSupplyStateStr: PAnsiChar;
+  end;
+
+Function EnclosureInfo(const SMBios: TSMBios; var Index: Integer; out EnclosureInformation: TEnclosureInformation): Boolean;
+  External 'EnclosureInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasCacheInfo(const SMBios: TSMBios): Boolean;
+  External 'HasCacheInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TCacheSRAMType = (SROther, SRUnknown, SRNon_Burst, SRBurst, SRPipelineBurst, SRSynchronous, SRAsynchronous);
+  TCacheSRAMTypes = set of TCacheSRAMType;
+
+  TErrorCorrectionType = (ECFiller, ECOther, ECUnknown, ECNone, ECParity, ECSingle_bitECC, ECMulti_bitECC);
+
+  TSystemCacheType = (SCFiller, SCOther, SCUnknown, SCInstruction, SCData, SCUnified);
+
+  TCacheInfo = record
+    Header: TSmBiosTableHeader;
+    SocketDesignation: Byte;
+    CacheConfiguration: Word;
+    MaximumCacheSize: Word;
+    InstalledSize: Word;
+    SupportedSRAMType: Word;
+    CurrentSRAMType: Word;
+    CacheSpeed: Byte;
+    ErrorCorrectionType: Byte;
+    SystemCacheType: Byte;
+    Associativity: Byte;
+  end;
+
+  TCacheInformation = record
+    RAWCacheInformation: TCacheInfo;
+    SocketDesignationStr: PAnsiChar;
+    MaximumCacheSize: Integer;
+    InstalledCacheSize: Integer;
+    SupportedSRAMType: TCacheSRAMTypes;//Word;
+    CurrentSRAMType: TCacheSRAMTypes;//Word;
+    ErrorCorrectionType: TErrorCorrectionType;//byte;
+    SystemCacheType: TSystemCacheType;//byte;
+    AssociativityStr: PAnsiChar;
+  end;
+
+Function CacheInfo(const SMBios: TSMBios; var Index: Integer; out CacheInformation: TCacheInformation): Boolean;
+  External 'CacheInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasProcessorInfo(const SMBios: TSMBios): Boolean;
+  External 'HasProcessorInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TProcessorInfo = record
+    Header: TSmBiosTableHeader;
+    SocketDesignation: Byte;
+    ProcessorType: Byte;
+    ProcessorFamily: Byte;
+    ProcessorManufacturer: Byte;
+    ProcessorID: Int64;
+    ProcessorVersion: Byte;
+    Voltaje: Byte;
+    ExternalClock: Word;
+    MaxSpeed: Word;
+    CurrentSpeed: Word;
+    Status: Byte;
+    ProcessorUpgrade: Byte;
+    L1CacheHandle: Word;
+    L2CacheHandle: Word;
+    L3CacheHandle: Word;
+    SerialNumber: Byte;
+    AssetTag: Byte;
+    PartNumber: Byte;
+    CoreCount: Byte;
+    CoreEnabled: Byte;
+    ThreadCount: Byte;
+    ProcessorCharacteristics: Word;
+    ProcessorFamily2: Word;
+  end;
+
+  TProcessorInformation = record
+    RAWProcessorInformation: TProcessorInfo;
+    L1Chache: TCacheInformation;
+    L2Chache: TCacheInformation;
+    L3Chache: TCacheInformation;
+    ProcessorManufacturerStr: PAnsiChar;
+    SocketDesignationStr: PAnsiChar;
+    ProcessorTypeStr: PAnsiChar;
+    ProcessorFamilyStr: PAnsiChar;
+    ProcessorVersionStr: PAnsiChar;
+    ProcessorVoltaje: Double;
+    ProcessorUpgradeStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    AssetTagStr: PAnsiChar;
+    PartNumberStr: PAnsiChar;
+  end;
+
+Function ProcessorInfo(const SMBios: TSMBios; var Index: Integer; out ProcessorInformation: TProcessorInformation): Boolean;
+  External 'ProcessorInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasMemoryControllerInfo(const SMBios: TSMBios): Boolean;
+  External 'HasMemoryControllerInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TMemoryControllerInfo = record
+    Header: TSmBiosTableHeader;
+    ErrorDetectingMethod: Byte;
+    ErrorCorrectingCapability: Byte;
+    SupportedInterleave: Byte;
+    CurrentInterleave: Byte;
+    MaximumMemoryModuleSize: Byte;
+    SupportedSpeeds: Word;
+    SupportedMemoryTypes: Word;
+    MemoryModuleVoltage: Byte;
+    NumberofAssociatedMemorySlots: Byte;
+    MemoryModuleConfigurationHandles: Word;
+    EnabledErrorCorrectingCapabilities: Byte;
+  end;
+
+  TMemoryControllerInformation = record
+    RAWMemoryControllerInformation: TMemoryControllerInfo;
+    ErrorDetectingMethodDescr: PAnsiChar;
+    SupportedInterleaveDescr: PAnsiChar;
+    CurrentInterleaveDescr: PAnsiChar;
+  end;
+
+Function MemoryControllerInfo(const SMBios: TSMBios; var Index: Integer; out MemoryControllerInformation: TMemoryControllerInformation): Boolean;
+  External 'MemoryControllerInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasPortConnectorInfo(const SMBios: TSMBios): Boolean;
+  External 'HasPortConnectorInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TPortConnectorInfo = record
+    Header: TSmBiosTableHeader;
+    InternalReferenceDesignator: Byte;
+    InternalConnectorType: Byte;
+    ExternalReferenceDesignator: Byte;
+    ExternalConnectorType: Byte;
+    PortType: Byte;
+  end;
+
+  TPortConnectorInformation = record
+    RAWPortConnectorInformation: TPortConnectorInfo;
+    InternalReferenceDesignatorStr: PAnsiChar;
+    ConnectorType: PAnsiChar;
+    ExternalReferenceDesignatorStr: PAnsiChar;
+    PortTypeStr: PAnsiChar;
+  end;
+
+Function PortConnectorInfo(const SMBios: TSMBios; var Index: Integer; out PortConnectorInformation: TPortConnectorInformation): Boolean;
+  External 'PortConnectorInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasSystemSlotInfo(const SMBios: TSMBios): Boolean;
+  External 'HasSystemSlotInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TSystemSlotInfo = record
+    Header: TSmBiosTableHeader;
+    SlotDesignation: Byte;
+    SlotType: Byte;
+    SlotDataBusWidth: Byte;
+    CurrentUsage: Byte;
+    SlotLength: Byte;
+    SlotID: Word;
+    SlotCharacteristics1: Byte;
+    SlotCharacteristics2: Byte;
+    SegmentGroupNumber: Word;
+    BusNumber: Byte;
+    DeviceFunctionNumber: Byte;
+  end;
+
+  TSystemSlotInformation = record
+    RAWSystemSlotInformation: TSystemSlotInfo;
+    SlotDesignationStr: PAnsiChar;
+    SlotType: PAnsiChar;
+    SlotDataBusWidth: PAnsiChar;
+    CurrentUsage: PAnsiChar;
+    SlotLength: PAnsiChar;
+  end;
+
+Function SystemSlotInfo(const SMBios: TSMBios; var Index: Integer; out SystemSlotInformation: TSystemSlotInformation): Boolean;
+  External 'SystemSlotInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasOnBoardSystemInfo(const SMBios: TSMBios): Boolean;
+  External 'HasOnBoardSystemInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TOnBoardSystemInfo = record
+    Header: TSmBiosTableHeader;
+    DeviceType: Byte;
+    DescriptionString: Byte;
+  end;
+
+  TOnBoardSystemInformation = record
+    RAWOnBoardSystemInfo: TOnBoardSystemInfo;
+    Description: PAnsiChar;
+    Enabled: Boolean;
+    TypeDescription: PAnsiChar;
+  end;
+
+Function OnBoardSystemInfo(const SMBios: TSMBios; var Index: Integer; out OnBoardSystemInformation: TOnBoardSystemInformation): Boolean;
+  External 'OnBoardSystemInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasOEMStringsInfo(const SMBios: TSMBios): Boolean;
+  External 'HasOEMStringsInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TOEMStringsInfo = record
+    Header: TSmBiosTableHeader;
+    Count: Byte;
+  end;
+
+  TOEMStringsInformation = record
+    RAWOEMStringsInformation: TOEMStringsInfo;
+    OEMStrings: array of PAnsiChar;
+  end;
+
+Function OEMStringsInfo(const SMBios: TSMBios; var Index: Integer; out OEMStringsInformation: TOEMStringsInformation): Boolean;
+  External 'OEMStringsInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasBIOSLanguageInfo(const SMBios: TSMBios): Boolean;
+  External 'HasBIOSLanguageInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TBIOSLanguageInfo = record
+    Header: TSmBiosTableHeader;
+    InstallableLanguages: Byte;
+    Flags: Byte;
+    Reserved: array [0 .. 14] of Byte;
+    CurrentLanguage: Byte;
+  end;
+
+  TBIOSLanguageInformation = record
+    RAWBIOSLanguageInformation: TBIOSLanguageInfo;
+    LanguagesStrings: array of PAnsiChar;
+    CurrentLanguageStr: PAnsiChar;
+  end;
+
+Function BIOSLanguageInfo(const SMBios: TSMBios; var Index: Integer; out BIOSLanguageInformation: TBIOSLanguageInformation): Boolean;
+  External 'BIOSLanguageInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasSystemConfInfo(const SMBios: TSMBios): Boolean;
+  External 'HasSystemConfInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TSystemConfInfo = record
+    Header: TSmBiosTableHeader;
+    Count: Byte;
+  end;
+
+  TSystemConfInformation = record
+    RAWSystemConfInformation: TSystemConfInfo;
+    ConfStrings: Array of PAnsiChar;
+  end;
+
+Function SystemConfInfo(const SMBios: TSMBios; var Index: Integer; out SystemConfInformation: TSystemConfInformation): Boolean;
+  External 'SystemConfInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasPhysicalMemoryArrayInfo(const SMBios: TSMBios): Boolean;
+  External 'HasPhysicalMemoryArrayInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TPhysicalMemoryArrayInfo = record
+    Header: TSmBiosTableHeader;
+    Location: Byte;
+    Use: Byte;
+    MemoryErrorCorrection: Byte;
+    MaximumCapacity: DWORD;
+    MemoryErrorInformationHandle: Word;
+    NumberofMemoryDevices: Word;
+    ExtendedMaximumCapacity: Int64;
+  end;
+
+  TPhysicalMemoryArrayInformation = record
+    RAWPhysicalMemoryArrayInformation: TPhysicalMemoryArrayInfo;
+    LocationStr: PAnsiChar;
+    UseStr: PAnsiChar;
+    ErrorCorrectionStr: PAnsiChar;
+  end;
+
+Function PhysicalMemoryArrayInfo(const SMBios: TSMBios; var Index: Integer; out PhysicalMemoryArrayInformation: TPhysicalMemoryArrayInformation): Boolean;
+  External 'PhysicalMemoryArrayInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasMemoryDeviceInfo(const SMBios: TSMBios): Boolean;
+  External 'HasMemoryDeviceInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TMemoryDeviceInfo = record
+    Header: TSmBiosTableHeader;
+    PhysicalMemoryArrayHandle: Word;
+    MemoryErrorInformationHandle: Word;
+    TotalWidth: Word;
+    DataWidth: Word;
+    Size: Word;
+    FormFactor: Byte;
+    DeviceSet: Byte;
+    DeviceLocator: Byte;
+    BankLocator: Byte;
+    MemoryType: Byte;
+    TypeDetail: Word;
+    Speed: Word;
+    Manufacturer: Byte;
+    SerialNumber: Byte;
+    AssetTag: Byte;
+    PartNumber: Byte;
+    Attributes: Byte;
+    ExtendedSize: DWORD;
+    ConfiguredMemoryClockSpeed: DWORD;
+    MinimumVoltage: Word;
+    MaximumVoltage: Word;
+    ConfiguredVoltage: Word;
+  end;
+
+  TMemoryDeviceInformation = record
+    RAWMemoryDeviceInfo: TMemoryDeviceInfo;
+    PhysicalMemoryArray: TPhysicalMemoryArrayInformation;
+    Size: DWORD;
+    FormFactor: PAnsiChar;
+    DeviceLocatorStr: PAnsiChar;
+    BankLocatorStr: PAnsiChar;
+    MemoryTypeStr: PAnsiChar;
+    ManufacturerStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    AssetTagStr: PAnsiChar;
+    PartNumberStr: PAnsiChar;
+  end;
+
+Function MemoryDeviceInfo(const SMBios: TSMBios; var Index: Integer; out MemoryDeviceInformation: TMemoryDeviceInformation): Boolean;
+  External 'MemoryDeviceInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasMemoryModuleInfo(const SMBios: TSMBios): Boolean;
+  External 'HasMemoryModuleInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TMemoryModuleInfo = record
+    Header: TSmBiosTableHeader;
+    SocketDesignation: Byte;
+    BankConnections: Byte;
+    CurrentSpeed: Byte;
+    CurrentMemoryType: Word;
+    InstalledSize: Byte;
+    EnabledSize: Byte;
+    ErrorStatus: Byte;
+  end;
+
+  TMemoryModuleInformation = record
+    RAWMemoryModuleInformation: TMemoryModuleInfo;
+    SocketDesignationDescr: PAnsiChar;
+  end;
+
+Function MemoryModuleInfo(const SMBios: TSMBios; var Index: Integer; out MemoryModuleInformation: TMemoryModuleInformation): Boolean;
+  External 'MemoryModuleInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasBatteryInfo(const SMBios: TSMBios): Boolean;
+  External 'HasBatteryInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TBatteryInfo = record
+    Header: TSmBiosTableHeader;
+    Location: Byte;
+    Manufacturer: Byte;
+    ManufacturerDate: Byte;
+    SerialNumber: Byte;
+    DeviceName: Byte;
+    DeviceChemistry: Byte;
+    DesignCapacity: Word;
+    DesignVoltage: Word;
+    SBDSVersionNumber: Byte;
+    MaximumErrorInBatteryData: Byte;
+    SBDSSerialNumber: Word;
+    SBDSManufacturerDate: Word;
+    SBDSDeviceChemistry: Byte;
+    DesignCapacityMultiplier: Byte;
+    OEM_Specific: DWORD;
+  end;
+
+  TBatteryInformation = record
+    RAWBatteryInfo: TBatteryInfo;
+    LocationStr: PAnsiChar;
+    ManufacturerStr: PAnsiChar;
+    ManufacturerDateStr: PAnsiChar;
+    SerialNumberStr: PAnsiChar;
+    DeviceNameStr: PAnsiChar;
+    DeviceChemistry: PAnsiChar;
+    SBDSVersionNumberStr: PAnsiChar;
+    SBDSManufacturerDate: TDateTime;
+    SBDSDeviceChemistryStr: PAnsiChar;
+  end;
+
+Function BatteryInfo(const SMBios: TSMBios; var Index: Integer; out BatteryInformation: TBatteryInformation): Boolean;
+  External 'BatteryInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasMemoryArrayMappedAddressInfo(const SMBios: TSMBios): Boolean;
+  External 'HasMemoryArrayMappedAddressInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TMemoryArrayMappedAddress = record
+    Header: TSmBiosTableHeader;
+    StartingAddress: DWORD;
+    EndingAddress: DWORD;
+    MemoryArrayHandle: Word;
+    PartitionWidth: Byte;
+    ExtendedStartingAddress: Int64;
+    ExtendedEndingAddress: Int64;
+  end;
+
+  TMemoryArrayMappedAddressInformation = record
+    RAWMemoryArrayMappedAddressInfo: TMemoryArrayMappedAddress;
+  end;
+
+Function MemoryArrayMappedAddressInfo(const SMBios: TSMBios; var Index: Integer; out MemoryArrayMappedAddressInformation: TMemoryArrayMappedAddressInformation): Boolean;
+  External 'MemoryArrayMappedAddressInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasMemoryDeviceMappedAddressInfo(const SMBios: TSMBios): Boolean;
+  External 'HasMemoryDeviceMappedAddressInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TMemoryDeviceMappedAddress = record
+    Header: TSmBiosTableHeader;
+    StartingAddress: DWORD;
+    EndingAddress: DWORD;
+    MemoryDeviceHandle: Word;
+    MemoryArrayMappedAddressHandle: Word;
+    PartitionRowPosition: Byte;
+    InterleavePosition: Byte;
+    InterleavedDataDepth: Byte;
+    ExtendedStartingAddress: Int64;
+    ExtendedEndingAddress: Int64;
+  end;
+
+  TMemoryDeviceMappedAddressInformation = record
+    RAWMemoryDeviceMappedAddressInfo: TMemoryDeviceMappedAddress;
+  end;
+
+Function MemoryDeviceMappedAddressInfo(const SMBios: TSMBios; var Index: Integer; out MemoryDeviceMappedAddressInformation: TMemoryDeviceMappedAddressInformation): Boolean;
+  External 'MemoryDeviceMappedAddressInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasBuiltInPointingDeviceInfo(const SMBios: TSMBios): Boolean;
+  External 'HasBuiltInPointingDeviceInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TBuiltInPointingDevice = record
+    Header: TSmBiosTableHeader;
+    _Type: Byte;
+    _Interface: Byte;
+    NumberofButtons: Byte;
+  end;
+
+  TBuiltInPointingDeviceInformation = record
+    RAWBuiltInPointingDeviceInfo: TBuiltInPointingDevice;
+    BidiType: PAnsiChar;
+    BidiInterface: PAnsiChar;
+  end;
+
+Function BuiltInPointingDeviceInfo(const SMBios: TSMBios; var Index: Integer; out BuiltInPointingDeviceInformation: TBuiltInPointingDeviceInformation): Boolean;
+  External 'BuiltInPointingDeviceInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasVoltageProbeInfo(const SMBios: TSMBios): Boolean;
+  External 'HasVoltageProbeInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TVoltageProbeInfo = record
+    Header: TSmBiosTableHeader;
+    Description: Byte;
+    LocationandStatus: Byte;
+    MaximumValue: Word;
+    MinimumValue: Word;
+    Resolution: Word;
+    Tolerance: Word;
+    Accuracy: Word;
+    OEMdefined: DWORD;
+    NominalValue: Word;
+  end;
+
+  TVoltageProbeInformation = record
+    RAWVoltageProbeInfo: TVoltageProbeInfo;
+    DescriptionStr: PAnsiChar;
+    Location: PAnsiChar;
+    Status: PAnsiChar;
+  end;
+
+Function VoltageProbeInfo(const SMBios: TSMBios; var Index: Integer; out VoltageProbeInformation: TVoltageProbeInformation): Boolean;
+  External 'VoltageProbeInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasCoolingDeviceInfo(const SMBios: TSMBios): Boolean;
+  External 'HasCoolingDeviceInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TCoolingDeviceInfo = record
+    Header: TSmBiosTableHeader;
+    TemperatureProbeHandle: Word;
+    DeviceTypeandStatus: Byte;
+    CoolingUnitGroup: Byte;
+    OEMdefined: DWORD;
+    NominalSpeed: Word;
+    Description: Byte;
+  end;
+
+  TCoolingDeviceInformation = record
+    RAWCoolingDeviceInfo: TCoolingDeviceInfo;
+    DescriptionStr: PAnsiChar;
+    DeviceType: PAnsiChar;
+    Status: PAnsiChar;
+  end;
+
+Function CoolingDeviceInfo(const SMBios: TSMBios; var Index: Integer; out CoolingDeviceInformation: TCoolingDeviceInformation): Boolean;
+  External 'CoolingDeviceInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasTemperatureProbeInfo(const SMBios: TSMBios): Boolean;
+  External 'HasTemperatureProbeInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TTemperatureProbeInfo = record
+    Header: TSmBiosTableHeader;
+    Description: Byte;
+    LocationandStatus: Byte;
+    MaximumValue: Word;
+    MinimumValue: Word;
+    Resolution: Word;
+    Tolerance: Word;
+    Accuracy: Word;
+    OEMdefined: DWORD;
+    NominalValue: Word;
+  end;
+
+  TTemperatureProbeInformation = record
+    RAWTemperatureProbeInfo: TTemperatureProbeInfo;
+    DescriptionStr: PAnsiChar;
+    Location: PAnsiChar;
+    Status: PAnsiChar;
+  end;
+
+Function TemperatureProbeInfo(const SMBios: TSMBios; var Index: Integer; out TemperatureProbeInformation: TTemperatureProbeInformation): Boolean;
+  External 'TemperatureProbeInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasElectricalCurrentProbeInfo(const SMBios: TSMBios): Boolean;
+  External 'HasElectricalCurrentProbeInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TElectricalCurrentProbeInfo = record
+    Header: TSmBiosTableHeader;
+    Description: Byte;
+    LocationandStatus: Byte;
+    MaximumValue: Word;
+    MinimumValue: Word;
+    Resolution: Word;
+    Tolerance: Word;
+    Accuracy: Word;
+    OEMdefined: DWORD;
+    NominalValue: Word;
+  end;
+
+  TElectricalCurrentProbeInformation = record
+    RAWElectricalCurrentProbeInfo: TElectricalCurrentProbeInfo;
+    DescriptionStr: PAnsiChar;
+    Location: PAnsiChar;
+    Status: PAnsiChar;
+  end;
+
+Function ElectricalCurrentProbeInfo(const SMBios: TSMBios; var Index: Integer; out ElectricalCurrentProbeInformation: TElectricalCurrentProbeInformation): Boolean;
+  External 'ElectricalCurrentProbeInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function HasGroupAssociationsInfo(const SMBios: TSMBios): Boolean;
+  External 'HasGroupAssociationsInfo@files:TSMBIOS.dll stdcall';
+
+Type
+  TGroupAssociationsInfo = record
+    Header: TSmBiosTableHeader;
+    GroupName: Byte;
+    ItemType: Byte;
+    ItemHandle: Word;
+  end;
+
+  TGroupAssociationsInformation = record
+    RAWGroupAssociationsInformation: TGroupAssociationsInfo;
+    GroupName: PAnsiChar;
+  end;
+
+Function GroupAssociationsInfo(const SMBios: TSMBios; var Index: Integer; out GroupAssociationsInformation: TGroupAssociationsInformation): Boolean;
+  External 'GroupAssociationsInfo@files:TSMBIOS.dll stdcall';
+
+// ---
+
+Function SMBiosFree(var SMBios: TSMBios): Boolean;
+  External 'Free@files:TSMBIOS.dll stdcall';
+
+// ---
